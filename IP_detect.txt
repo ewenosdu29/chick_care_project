@@ -1,0 +1,25 @@
+======================= With Internet =====================
+
+ifconfig -a eth0
+
+we find : inet 10.10.32.19  netmask
+
+ping -c 1 10.10.32.19
+
+arp -a | grep "a4:14:37:85:60:56"
+
+we get : (10.10.32.39) at a4:14:37:85:60:56 [ether] on eth0
+
+
+======================= IP-v4 Link local only =======================
+ifconfig -a eth0
+
+inet 169.254.100.155  netmask
+
+ping -c 1 169.254.100.155
+
+arp -a
+
+
+======================= IP-v4 Link local only =======================
+nmap -sP 169.254.61.0/24
