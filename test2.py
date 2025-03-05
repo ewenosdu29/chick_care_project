@@ -9,7 +9,7 @@ class Camera(object):
         if not self.capture.isOpened():
             print("Erreur de connexion à la caméra.") 
             exit()
-        self.FPS = 1 / 200  # Définir une fréquence d'images de 30 FPS
+        self.FPS = 1 / 240  # Définir une fréquence d'images de 30 FPS
         self.FPS_MS = int(self.FPS * 1000)
         self.frame = None
 
