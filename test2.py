@@ -28,7 +28,6 @@ class Camera(object):
             cv2.imshow("Flux vidéo", self.frame)
             if cv2.waitKey(self.FPS_MS) & 0xFF == ord(' '):  # Quitter si 'espace' est pressé
                 break
-            time.sleep(self.FPS)
 
     def release(self):
         self.capture.release()
