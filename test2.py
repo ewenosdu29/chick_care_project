@@ -1,6 +1,5 @@
 import cv2
 import time
-import pandas as pd
 
 class Camera(object):
     def __init__(self, rtsp_url):
@@ -34,8 +33,7 @@ class Camera(object):
         cv2.destroyAllWindows()
 
 if __name__ == '__main__':
-    # Adresse RTSP de la caméra
-    rtsp_url = "rtsp://admin:vision29@169.254.27.214/Streaming/channels/201"
+    rtsp_url = "rtsp://admin:vision29@169.254.27.214/Streaming/channels/201" # Adresse RTSP de la caméra
     camera = Camera(rtsp_url)
     camera.update_video()
     camera.release()
