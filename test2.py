@@ -9,19 +9,24 @@ class Camera(object):
         if not self.capture.isOpened():
             print("Erreur de connexion à la caméra.") 
             exit()
-        self.FPS = 1 / 240  # Définir une fréquence d'images de 30 FPS
+        self.FPS = 1 / 240  # Définir une fréquence d'images de 240 FPS -> mieux pour la thermique mais pas assez pour la normale
         self.FPS_MS = int(self.FPS * 1000)
         self.frame = None
+
+        width = int(self.capture.get(cv2.CAP_PROP_FRAME_WIDTH))
+        height = int(self.capture.get(cv2.CAP_PROP_FRAME_HEIGHT))
+        print(f"Résolution capturée : {width}x{height}")
+
 
     def update_video(self):
         while True: 
             ret, self.frame = self.capture.read()
             if not ret:
-                print("Erreur lors de la lecture du flux coucouiuu")
+                print("Erreur lors de la lecture du flux")
                 break
             # Afficher la vidéo en direct
             cv2.imshow("Flux vidéo", self.frame)
-            if cv2.waitKey(self.FPS_MS) & 0xFF == ord(' '):  # Quitter si 'q' est pressé
+            if cv2.waitKey(self.FPS_MS) & 0xFF == ord(' '):  # Quitter si 'espace' est pressé
                 break
             time.sleep(self.FPS)
 
