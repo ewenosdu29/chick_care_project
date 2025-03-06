@@ -31,7 +31,7 @@ class Camera(object):
 
 if __name__ == '__main__':
     # Adresse RTSP de la caméra
-    rtsp_url = "rtsp://admin:vision29@169.254.61.84/Streaming/channels/201"
+    rtsp_url = "rtsp://admin:vision29@169.254.27.214/Streaming/channels/201"
     camera = Camera(rtsp_url)
     camera.update_video()
     camera.release()
