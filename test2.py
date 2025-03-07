@@ -18,10 +18,11 @@ class Camera(object):
 
 
     def update_video(self):
+
         while True: 
             ret, self.frame = self.capture.read()
             if not ret:
-                print("Erreur lors de la lecture du flux")
+                print("Erreur lors de la lecture du flux vidéo en direct")
                 break
             # Afficher la vidéo en direct
             cv2.imshow("Flux vidéo", self.frame)
