@@ -1,5 +1,5 @@
 import sys
-from PySide6.QtWidgets import QApplication, QMainWindow, QLabel, QWidget, QVBoxLayout, QMenu, QMenuBar
+from PySide6.QtWidgets import QApplication, QMainWindow, QLabel, QWidget, QVBoxLayout, QMenu, QMenuBar, QPushButton
 from PySide6.QtGui import QAction
 from PySide6.QtCore import Qt
 
@@ -21,38 +21,46 @@ class MainWindow(QMainWindow):
                 font-weight: bold;
                 color: #ECEFF4;
             }
+            QPushButton {
+                font-size: 18px;
+                font-weight: bold;
+                color: white;
+                background-color: #5E81AC;
+                border-radius: 10px;
+                padding: 10px;
+            }
+            QPushButton:hover {
+                background-color: #81A1C1;
+            }
             QMenuBar {
                 background-color: #3B4252;
                 color: #ECEFF4;
             }
-            QMenuBar::item {
-                padding: 6px;
-                background-color: transparent;
-            }
-            QMenuBar::item:selected {
-                background-color: #4C566A;
-            }
-            QMenu {
-                background-color: #4C566A;
-                color: #ECEFF4;
-                border: 1px solid #81A1C1;
-            }
-            QMenu::item:selected {
-                background-color: #5E81AC;
-            }
         """)
-
-        # Création du texte central
-        self.label = QLabel('Chick & Care Project', self)
-        self.label.setAlignment(Qt.AlignCenter)  
 
         # Création du widget central
         central_widget = QWidget()
-        layout = QVBoxLayout()
-        layout.addWidget(self.label)
-        central_widget.setLayout(layout)
+        layout = QVBoxLayout(central_widget)
 
-        # Définir le widget central
+        # Label du titre
+        self.label = QLabel('Chick & Care Project', self)
+        self.label.setAlignment(Qt.AlignCenter)
+
+        # Bouton "Entrer"
+        self.enter_button = QPushButton("Entrer")
+        self.enter_button.setFixedSize(150, 40)  # Taille du bouton
+        self.enter_button.clicked.connect(self.on_enter_clicked)  # Connecte l'événement
+
+        # Label du footer (texte en petit)
+        self.labelFooter = QLabel('Développé par : Piment Léonie & Helary Ewen', self)
+        self.labelFooter.setAlignment(Qt.AlignCenter)
+        self.labelFooter.setStyleSheet("font-size: 12px;")  # Texte plus petit
+
+        # Ajout des widgets au layout
+        layout.addWidget(self.label)
+        layout.addWidget(self.enter_button, alignment=Qt.AlignCenter)
+        layout.addWidget(self.labelFooter)
+
         self.setCentralWidget(central_widget)
 
         # Création de la barre de menu
@@ -72,17 +80,13 @@ class MainWindow(QMainWindow):
         # Ajouter l'action 'Quitter' au menu 'Fichier'
         file_menu.addAction(quit_action)
 
+    def on_enter_clicked(self):
+        print("Bouton Entrer cliqué !")  # Ajoute ici le comportement souhaité
+
 def main():
-    # Créer l'application
     app = QApplication(sys.argv)
-
-    # Créer la fenêtre principale
     window = MainWindow()
-
-    # Afficher la fenêtre
     window.show()
-
-    # Exécuter l'application
     sys.exit(app.exec())
 
 if __name__ == "__main__":

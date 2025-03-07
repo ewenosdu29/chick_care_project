@@ -18,7 +18,6 @@ class Camera(object):
 
 
     def update_video(self):
-
         while True: 
             ret, self.frame = self.capture.read()
             if not ret:
