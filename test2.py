@@ -34,7 +34,7 @@ class Camera(object):
         cv2.destroyAllWindows()        
 
 if __name__ == '__main__':
-    rtsp_url = "rtsp://admin:vision29@169.254.27.214/Streaming/channels/201" # Adresse RTSP de la caméra
+    rtsp_url = "rtsp://admin:vision29@169.254.61.84/Streaming/channels/201" # Adresse RTSP de la caméra
     camera = Camera(rtsp_url)
     camera.update_video()
     camera.release()
