@@ -23,6 +23,7 @@ from requests.auth import HTTPDigestAuth
 ##      Min valeur = [-140:-100,-230:-130,0]            # 0:25, 25:50 , 75:100
 ##      Max valeur = [100:140,-230:-130,0]
 ################################################
+
 class show_info(object):
         def __init__(self, window = 'Text'):
                 self.window = window
