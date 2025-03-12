@@ -17,7 +17,7 @@ def is_rtsp_port_open(ip, port=554, timeout=1):
 
 def find_valid_rtsp_ip(timeout=3):
 
-    tab_ip = ["169.254.77.146", "169.254.27.214", "169.254.61.84"]
+    tab_ip = ["169.254.77.146", "169.254.27.214", "169.254.61.84", "169.254.56.5"]
     for ip in tab_ip:
         print(f"Test du port RTSP sur {ip}...")
         
