@@ -1,67 +1,83 @@
 import cv2
-import numpy as np
+import time
 
-class Camera:
-    def __init__(self, rtsp_url):
+class RTSPStreamer:
+    def __init__(self, rtsp_url, desired_fps, output_filename):
+        """
+        Initialise la classe avec l'URL RTSP de la caméra, le FPS souhaité et le nom du fichier de sortie.
+        """
         self.rtsp_url = rtsp_url
-        self.capture = cv2.VideoCapture(self.rtsp_url)
-        if not self.capture.isOpened():
-            print(f"❌ Erreur de connexion à la caméra : {self.rtsp_url}")
+        self.cap = cv2.VideoCapture(self.rtsp_url)
+
+        if not self.cap.isOpened():
+            print("Erreur : Impossible d'ouvrir le flux RTSP")
+            self.cap.release()
             exit()
 
-        # Récupérer la résolution native
-        self.original_width = int(self.capture.get(cv2.CAP_PROP_FRAME_WIDTH))
-        self.original_height = int(self.capture.get(cv2.CAP_PROP_FRAME_HEIGHT))
-        print(f"✅ Caméra {self.rtsp_url} - Résolution : {self.original_width}x{self.original_height}")
+        # Récupère les FPS d'origine du flux vidéo
+        self.fps = self.cap.get(cv2.CAP_PROP_FPS)
+        print(f"FPS d'origine du flux vidéo : {self.fps}")
+        
+        # FPS souhaité
+        self.desired_fps = desired_fps
+        print(f"FPS modifié souhaité : {self.desired_fps}")
 
-    def read_frame(self):
-        """Lit une frame sans modification"""
-        ret, frame = self.capture.read()
-        return frame if ret else None
+        # Récupérer la résolution du flux (largeur et hauteur)
+        self.frame_width = int(self.cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+        self.frame_height = int(self.cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+
+        # Configurer le VideoWriter pour l'enregistrement
+        fourcc = cv2.VideoWriter_fourcc(*'XVID')  # Codec XVID pour .avi
+        self.out = cv2.VideoWriter(output_filename, fourcc, self.desired_fps, 
+                                    (self.frame_width, self.frame_height))
+        print(f"Enregistrement en cours dans : {output_filename}")
+
+    def display_and_record_stream(self):
+        """
+        Affiche le flux vidéo en temps réel et enregistre dans un fichier.
+        """
+        prev_frame_time = 0  # Temps précédent (initialement zéro)
+
+        while True:
+            ret, frame = self.cap.read()
+            if not ret:
+                print("Erreur : Impossible de lire la frame")
+                break
+
+            # Temps actuel
+            new_frame_time = time.time()
+
+            # Calcul de l'intervalle entre les frames
+            time_diff = new_frame_time - prev_frame_time
+
+            # Si l'intervalle est plus grand que 1/fps souhaité, on affiche et enregistre la frame
+            if time_diff > 1.0 / self.desired_fps:
+                prev_frame_time = new_frame_time  # Mise à jour du temps précédent
+                cv2.imshow("Flux RTSP", frame)  # Afficher la frame
+                self.out.write(frame)  # Enregistrer la frame dans le fichier
+
+            # Quitter avec la touche 'q'
+            if cv2.waitKey(1) & 0xFF == ord('q'):
+                break
 
     def release(self):
-        self.capture.release()
+        """
+        Libère les ressources utilisées par la capture vidéo et l'écriture du fichier.
+        """
+        self.cap.release()
+        self.out.release()  # Libération du VideoWriter
         cv2.destroyAllWindows()
 
-def pad_frame_to_match(frame, target_height, target_width):
-    """Ajoute un fond noir autour de l'image pour l'agrandir sans la déformer"""
-    h, w, _ = frame.shape
-    top = (target_height - h) // 2
-    bottom = target_height - h - top
-    left = (target_width - w) // 2
-    right = target_width - w - left
-    return cv2.copyMakeBorder(frame, top, bottom, left, right, cv2.BORDER_CONSTANT, value=[0, 0, 0])
+# Exemple d'utilisation
+if __name__ == "__main__":
+    rtsp_url = "rtsp://admin:vision29@169.254.77.146/Streaming/channels/201"  # Remplacez par l'URL RTSP de votre caméra
+    output_filename = "recorded_video/output_video.mp4"  # Nom du fichier de sortie
 
-if __name__ == '__main__':
-    rtsp_url1 = "rtsp://admin:vision29@169.254.77.146/Streaming/channels/201"  # 1280x720
-    rtsp_url2 = "rtsp://admin:vision29@169.254.77.146/Streaming/channels/101"  # 2688x1520
+    # Crée l'objet RTSPStreamer avec un FPS souhaité (par exemple, 15 FPS)
+    streamer = RTSPStreamer(rtsp_url, desired_fps=30, output_filename=output_filename)
 
-    camera1 = Camera(rtsp_url1)
-    camera2 = Camera(rtsp_url2)
+    # Affiche et enregistre le flux en temps réel
+    streamer.display_and_record_stream()
 
-    # Déterminer la plus grande résolution des deux caméras
-    max_width = max(camera1.original_width, camera2.original_width)
-    max_height = max(camera1.original_height, camera2.original_height)
-
-    while True:
-        frame1 = camera1.read_frame()
-        frame2 = camera2.read_frame()
-
-        if frame1 is None or frame2 is None:
-            break
-
-        # Ajouter des bordures pour égaliser les tailles
-        frame1_padded = pad_frame_to_match(frame1, max_height, max_width)
-        frame2_padded = pad_frame_to_match(frame2, max_height, max_width)
-
-        # Combiner les frames horizontalement
-        combined_frame = np.hstack((frame1_padded, frame2_padded))
-
-        # Afficher la frame combinée
-        cv2.imshow("Flux vidéo combiné", combined_frame)
-
-        if cv2.waitKey(1) & 0xFF == ord(' '):  # Quitter avec 'Espace'
-            break
-
-    camera1.release()
-    camera2.release()
+    # Libère les ressources à la fin
+    streamer.release()
