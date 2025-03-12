@@ -1,5 +1,5 @@
 import cv2
-import time
+from ipSearch import find_valid_rtsp_ip
 
 class RTSPStreamer:
     def __init__(self, rtsp_url, desired_fps, output_filename):
@@ -17,7 +17,7 @@ class RTSPStreamer:
         # Récupère les FPS d'origine du flux vidéo
         self.fps = self.cap.get(cv2.CAP_PROP_FPS)
         print(f"FPS d'origine du flux vidéo : {self.fps}")
-        
+
         # FPS souhaité
         self.desired_fps = desired_fps
         print(f"FPS modifié souhaité : {self.desired_fps}")
@@ -29,35 +29,27 @@ class RTSPStreamer:
         # Configurer le VideoWriter pour l'enregistrement
         fourcc = cv2.VideoWriter_fourcc(*'XVID')  # Codec XVID pour .avi
         self.out = cv2.VideoWriter(output_filename, fourcc, self.desired_fps, 
-                                    (self.frame_width, self.frame_height))
-        print(f"Enregistrement en cours dans : {output_filename}")
+                                   (self.frame_width, self.frame_height))
+        print(f"Fichier d'enregistrement : {output_filename}")
 
-    def display_and_record_stream(self):
+    def display_stream(self, record=False):
         """
-        Affiche le flux vidéo en temps réel et enregistre dans un fichier.
+        Affiche le flux vidéo en temps réel.
+        Si 'record' est True, enregistre la vidéo.
         """
-        prev_frame_time = 0  # Temps précédent (initialement zéro)
-
         while True:
             ret, frame = self.cap.read()
             if not ret:
                 print("Erreur : Impossible de lire la frame")
                 break
 
-            # Temps actuel
-            new_frame_time = time.time()
+            cv2.imshow("Flux RTSP", frame)
 
-            # Calcul de l'intervalle entre les frames
-            time_diff = new_frame_time - prev_frame_time
+            # Si l'enregistrement est activé, on écrit la frame
+            if record:
+                self.out.write(frame)
 
-            # Si l'intervalle est plus grand que 1/fps souhaité, on affiche et enregistre la frame
-            if time_diff > 1.0 / self.desired_fps:
-                prev_frame_time = new_frame_time  # Mise à jour du temps précédent
-                cv2.imshow("Flux RTSP", frame)  # Afficher la frame
-                self.out.write(frame)  # Enregistrer la frame dans le fichier
-
-            # Quitter avec la touche 'q'
-            if cv2.waitKey(1) & 0xFF == ord('q'):
+            if cv2.waitKey(1) & 0xFF == ord(' '):
                 break
 
     def release(self):
@@ -70,14 +62,34 @@ class RTSPStreamer:
 
 # Exemple d'utilisation
 if __name__ == "__main__":
-    rtsp_url = "rtsp://admin:vision29@169.254.77.146/Streaming/channels/201"  # Remplacez par l'URL RTSP de votre caméra
-    output_filename = "recorded_video/output_video.mp4"  # Nom du fichier de sortie
 
-    # Crée l'objet RTSPStreamer avec un FPS souhaité (par exemple, 15 FPS)
-    streamer = RTSPStreamer(rtsp_url, desired_fps=30, output_filename=output_filename)
+    ip = find_valid_rtsp_ip()
 
-    # Affiche et enregistre le flux en temps réel
-    streamer.display_and_record_stream()
+    if ip:
+        print(f"L'IP fonctionnelle est : {ip}")
+    else:
+        print("Aucune IP RTSP trouvée.")
 
-    # Libère les ressources à la fin
-    streamer.release()
+    rtsp_url = f"rtsp://admin:vision29@{ip}/Streaming/channels/201"  # Remplacez par l'URL RTSP de votre caméra
+    print("test :::: :: ",rtsp_url)
+    output_filename = "recorded_video/output_video2.avi"  # Nom du fichier de sortie
+
+    print("Bienvenue sur l'afficheur et l'enregistreur de stream RTSP !")
+    print("Quelle opération souhaitez-vous réaliser ?")
+    print("  - Display the stream (1)")
+    print("  - Display & record the stream (2)\n")
+
+    var = int(input("Quel est votre choix ? "))
+
+    fps = int(input("Combien de FPS :"))
+
+    if var == 1:
+        rtsp_stream = RTSPStreamer(rtsp_url, fps, output_filename)
+        rtsp_stream.display_stream(record=False)  # Ne pas enregistrer
+        rtsp_stream.release()
+    elif var == 2:
+        rtsp_stream = RTSPStreamer(rtsp_url, fps, output_filename)
+        rtsp_stream.display_stream(record=True)  # Enregistrer
+        rtsp_stream.release()
+    else:
+        print("Erreur : Choix non valide")
