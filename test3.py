@@ -1,79 +1,123 @@
 import cv2
 import time
+import multiprocessing
+from datetime import datetime
+from ipSearch import find_valid_rtsp_ip
 
-class Camera(object):
-    def __init__(self, rtsp_urls, fps):
-        self.rtsp_urls = rtsp_urls
-        self.capture = None
-        self.rtsp_url = None
-        self.FPS = 1 / fps  # Définir une fréquence d'images personnalisée
-        self.FPS_MS = int(self.FPS * 1000)  # Convertir en millisecondes
-        self.frame = None
+class RTSPStreamer:
+    def __init__(self, rtsp_url, desired_fps, output_filename, window_name):
+        """
+        Initialise la classe avec l'URL RTSP de la caméra, le FPS souhaité, le nom du fichier de sortie et le nom de la fenêtre.
+        """
+        self.rtsp_url = rtsp_url
+        self.window_name = window_name  # Nom unique pour la fenêtre
 
-        # Tester les différentes URL RTSP jusqu'à ce qu'une connexion fonctionne
-        for url in self.rtsp_urls:
-            self.capture = cv2.VideoCapture(url)
-            if not self.capture.isOpened():
-                print(f"Échec de connexion à : {url}")
-                continue  # Passer à l'URL suivante si la connexion échoue
-            ret, _ = self.capture.read()
-            if ret:
-                self.rtsp_url = url
-                print(f"Connexion réussie à la caméra : {url}")
-                break
-            else:
-                print(f"Flux non lisible à : {url}")
-                self.capture.release()  # Libérer la ressource si l'URL ne fonctionne pas
+        self.cap = cv2.VideoCapture(self.rtsp_url)
+        if not self.cap.isOpened():
+            print(f"Erreur : Impossible d'ouvrir le flux RTSP {self.rtsp_url}")
+            self.cap.release()
+            exit()
 
-        if self.rtsp_url is None:
-            print("Aucune connexion n'a pu être établie.")
-            exit()  # Sortie si aucune connexion réussie
+        # Récupère les FPS d'origine du flux vidéo
+        self.fps = self.cap.get(cv2.CAP_PROP_FPS)
+        print(f"FPS d'origine du flux vidéo : {self.fps}")
+        
+        # FPS souhaité
+        self.desired_fps = desired_fps
+        print(f"FPS modifié souhaité : {self.desired_fps}")
 
-        # Obtenir la résolution de la caméra
-        width = int(self.capture.get(cv2.CAP_PROP_FRAME_WIDTH))
-        height = int(self.capture.get(cv2.CAP_PROP_FRAME_HEIGHT))
-        print(f"Résolution capturée : {width}x{height}")
+        # Récupérer la résolution du flux (largeur et hauteur)
+        self.frame_width = int(self.cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+        self.frame_height = int(self.cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
 
-    def update_video(self):
+        # Configurer le VideoWriter pour l'enregistrement
+        fourcc = cv2.VideoWriter_fourcc(*'XVID')  # Codec XVID pour .avi
+        self.out = cv2.VideoWriter(output_filename, fourcc, self.desired_fps, 
+                                    (self.frame_width, self.frame_height))
+        print(f"Enregistrement en cours dans : {output_filename}")
+
+    def display_and_record_stream(self):
+        """
+        Affiche le flux vidéo en temps réel et enregistre dans un fichier.
+        """
+        prev_frame_time = 0  # Temps précédent (initialement zéro)
+
         while True:
-            ret, self.frame = self.capture.read()
+            ret, frame = self.cap.read()
             if not ret:
-                print("Erreur lors de la lecture du flux vidéo en direct")
+                print("Erreur : Impossible de lire la frame")
                 break
-            # Afficher la vidéo en direct
-            cv2.imshow(f"Flux vidéo - {self.rtsp_url}", self.frame)
-            if cv2.waitKey(self.FPS_MS) & 0xFF == ord(' '):  # Quitter si 'espace' est pressé
+
+            # Temps actuel
+            new_frame_time = time.time()
+
+            # Calcul de l'intervalle entre les frames
+            time_diff = new_frame_time - prev_frame_time
+
+            # Si l'intervalle est plus grand que 1/fps souhaité, on affiche et enregistre la frame
+            if time_diff > 1.0 / self.desired_fps:
+                prev_frame_time = new_frame_time  # Mise à jour du temps précédent
+                cv2.imshow(self.window_name, frame)  # Afficher la frame avec un nom unique pour chaque fenêtre
+                self.out.write(frame)  # Enregistrer la frame dans le fichier
+
+            # Quitter avec la touche 'q'
+            if cv2.waitKey(1) & 0xFF == ord(' '):
                 break
 
     def release(self):
-        self.capture.release()
-        cv2.destroyAllWindows()
+        """
+        Libère les ressources utilisées par la capture vidéo et l'écriture du fichier.
+        """
+        self.cap.release()
+        self.out.release()  # Libération du VideoWriter
+        cv2.destroyWindow(self.window_name)  # Fermer la fenêtre associée à ce thread
 
-if __name__ == '__main__':
-    # Liste des adresses IP à tester pour les deux caméras
-    ip_addresses = [
-        "169.254.61.84",
-        "169.254.77.146",
-        "169.254.27.214"
-    ]
+# Exemple d'utilisation
+def start_stream(rtsp_url, desired_fps, output_filename, window_name, var):
+    if var == 1:
+        rtsp_stream = RTSPStreamer(rtsp_url, desired_fps, output_filename, window_name)
+        rtsp_stream.display_and_record_stream()  # Ne pas enregistrer
+        rtsp_stream.release()
+    elif var == 2:
+        rtsp_stream = RTSPStreamer(rtsp_url, desired_fps, output_filename, window_name)
+        rtsp_stream.display_and_record_stream()  # Enregistrer
+        rtsp_stream.release()
+    else:
+        print("Erreur : Choix non valide")
 
-    fps_cam1 = 340  # FPS pour la première caméra
-    fps_cam2 = 250 # FPS pour la deuxième caméra
+if __name__ == "__main__":
 
-    # Créer les URL RTSP pour chaque caméra
-    rtsp_urls_cam1 = [f"rtsp://admin:vision29@{ip}/Streaming/channels/101" for ip in ip_addresses]
-    rtsp_urls_cam2 = [f"rtsp://admin:vision29@{ip}/Streaming/channels/201" for ip in ip_addresses]
+    ip = find_valid_rtsp_ip()
+    print(ip)
 
+    if ip:
+        print(f"L'IP fonctionnelle est : {ip}")
+    else:
+        print("Aucune IP RTSP trouvée.")
+        
+    print("Bienvenue sur l'afficheur et l'enregistreur de stream RTSP !")
+    print("Quelle opération souhaitez-vous réaliser ?")
+    print("  - Display the stream (1)")
+    print("  - Display & record the stream (2)\n")
 
-    # Créer les objets Camera pour chaque caméra avec des FPS différents
-    camera1 = Camera(rtsp_urls_cam1, fps_cam1)
-    camera2 = Camera(rtsp_urls_cam2, fps_cam2)
+    var = int(input("Quel est votre choix ? "))
 
-    # Lancer la lecture des flux pour les deux caméras
-    camera1.update_video()
-    camera2.update_video()
+    fps = int(input("Combien de FPS :"))
 
-    # Libérer les ressources des deux caméras
-    camera1.release()
-    camera2.release()
+    rtsp_urls_cam1 = f"rtsp://admin:vision29@{ip}/Streaming/channels/101" 
+    rtsp_urls_cam2 = f"rtsp://admin:vision29@{ip}/Streaming/channels/201"
 
+    # Remplacez par l'URL RTSP de votre caméra
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    output_filename1 = f"output_{timestamp}1.mp4" 
+    output_filename2 = f"output_{timestamp}2.mp4" 
+
+    # Créer des processus pour chaque caméra
+    process1 = multiprocessing.Process(target=start_stream, args=(rtsp_urls_cam1, fps, output_filename1, "Flux Caméra 1", var))
+    process2 = multiprocessing.Process(target=start_stream, args=(rtsp_urls_cam2, fps, output_filename2, "Flux Caméra 2", var))
+
+    process1.start()
+    process2.start()
+
+    process1.join()
+    process2.join()
