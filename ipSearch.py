@@ -19,15 +19,14 @@ def find_valid_rtsp_ip(timeout=3):
 
     tab_ip = ["169.254.77.146", "169.254.27.214", "169.254.61.84", "169.254.56.5"]
     for ip in tab_ip:
-        print(f"Test du port RTSP sur {ip}...")
+        print(f"Test du port RTSP sur {ip}")
         
-        # Vérifier si le port RTSP est ouvert avant d'essayer OpenCV
         if not is_rtsp_port_open(ip):
-            print(f"Port RTSP fermé sur {ip}, on passe à l'IP suivante...")
+            print(f"Port RTSP fermé sur {ip}, on passe à l'IP suivante")
             continue
         
         rtsp_url = f"rtsp://admin:vision29@{ip}/Streaming/channels/201"
-        print(f"Port ouvert ! Test du flux RTSP sur {rtsp_url}...")
+        print(f"Port ouvert ! Test du flux RTSP sur {rtsp_url}")
 
         cap = cv2.VideoCapture(rtsp_url)
         start_time = time.time()
@@ -37,10 +36,10 @@ def find_valid_rtsp_ip(timeout=3):
             if ret:
                 print(f"Connexion réussie avec {ip} !")
                 cap.release()
-                return ip  # Retourne l'IP valide
+                return ip  
 
         cap.release()
         print(f"Timeout atteint pour {ip}, on teste la suivante...")
 
     print("Aucune IP valide trouvée.")
-    return None  # Aucune IP fonctionnelle
+    return None  
