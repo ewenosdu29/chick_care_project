@@ -44,6 +44,20 @@ class RTSPStreamer:
 
         while True:
             ret, frame = self.cap.read()
+            if self.window_name == "Flux Camera 1":  # Appliquer uniquement sur la caméra 1
+                scale_h = 1.3  # Facteur de zoom (1.3 = 130% de la taille d'origine)
+                scale_w = 1.55 # Facteur de zoom (1.55 = 155% de la taille d'origine)
+                height, width = frame.shape[:2] 
+                new_width, new_height = int(width * scale_w), int(height * scale_h)
+
+                # Redimensionner l'image
+                frame = cv2.resize(frame, (new_width, new_height), interpolation=cv2.INTER_LINEAR)
+
+                # Centrage du zoom (recadrer au centre)
+                center_x, center_y = new_width // 2, new_height // 2
+                start_x, start_y = center_x - width // 2, center_y - height // 2
+                frame = frame[start_y:start_y + height, start_x:start_x + width]  # Recadrer
+
             if not ret:
                 print("Erreur : Impossible de lire la frame")
                 break
@@ -108,13 +122,13 @@ if __name__ == "__main__":
     rtsp_urls_cam2 = f"rtsp://admin:vision29@{ip}/Streaming/channels/201"
 
     # Remplacez par l'URL RTSP de votre caméra
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    output_filename1 = f"output_{timestamp}1.mp4" 
-    output_filename2 = f"output_{timestamp}2.mp4" 
+    timestamp = datetime.now().strftime("%d-%m-%Y_%H-%M-%S")
+    output_filename1 = f"../Video_test/video_RGB/output_{timestamp}1.mp4" 
+    output_filename2 = f"../Video_test/video_therm/output_{timestamp}2.mp4" 
 
     # Créer des processus pour chaque caméra
-    process1 = multiprocessing.Process(target=start_stream, args=(rtsp_urls_cam1, fps, output_filename1, "Flux Caméra 1", var))
-    process2 = multiprocessing.Process(target=start_stream, args=(rtsp_urls_cam2, fps, output_filename2, "Flux Caméra 2", var))
+    process1 = multiprocessing.Process(target=start_stream, args=(rtsp_urls_cam1, fps, output_filename1, "Flux Camera 1", var))
+    process2 = multiprocessing.Process(target=start_stream, args=(rtsp_urls_cam2, fps, output_filename2, "Flux Camera 2", var))
 
     process1.start()
     process2.start()
