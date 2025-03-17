@@ -4,7 +4,7 @@ from ultralytics import YOLO
 from ipSearch import find_valid_rtsp_ip
 
 class RTSPYOLOStreamer:
-    def __init__(self, rtsp_url, model_path, desired_fps=300):
+    def __init__(self, rtsp_url, model_path, desired_fps=50):
         """
         Initialise la classe avec l'URL RTSP de la caméra, le modèle YOLO et le FPS souhaité.
         """
@@ -12,19 +12,19 @@ class RTSPYOLOStreamer:
         self.cap = cv2.VideoCapture(self.rtsp_url)
 
         if not self.cap.isOpened():
-            print("❌ Erreur : Impossible d'ouvrir le flux RTSP")
+            print("Erreur : Impossible d'ouvrir le flux RTSP")
             self.cap.release()
             exit()
 
-        print("✅ Flux RTSP ouvert avec succès.")
+        print("Flux RTSP ouvert avec succès.")
 
         # Charger le modèle YOLO
         self.model = YOLO(model_path)
-        print(f"✅ Modèle YOLO chargé : {model_path}")
+        print(f"Modèle YOLO chargé : {model_path}")
 
         # Récupérer les FPS réels de la caméra
         self.original_fps = self.cap.get(cv2.CAP_PROP_FPS)
-        print(f"🎥 FPS réel du flux : {self.original_fps:.2f}")
+        print(f"FPS réel du flux : {self.original_fps:.2f}")
 
         # Définir le FPS souhaité
         self.desired_fps = desired_fps
@@ -41,7 +41,7 @@ class RTSPYOLOStreamer:
             ret, frame = self.cap.retrieve()  # Récupère l'image capturée
             
             if not ret:
-                print("❌ Erreur : Impossible de lire la frame")
+                print("Erreur : Impossible de lire la frame")
                 break
 
             # Appliquer YOLO en mode streaming pour optimiser la vitesse
@@ -76,13 +76,13 @@ if __name__ == "__main__":
     ip = find_valid_rtsp_ip()
 
     if ip:
-        print(f"✅ L'IP fonctionnelle est : {ip}")
+        print(f"L'IP fonctionnelle est : {ip}")
     else:
-        print("❌ Aucune IP RTSP trouvée.")
+        print("Aucune IP RTSP trouvée.")
         exit()
 
     rtsp_url = f"rtsp://admin:vision29@{ip}/Streaming/channels/101"  # Remplacez par votre URL RTSP
-    print(f"🔗 Connexion au flux : {rtsp_url}")
+    print(f"Connexion au flux : {rtsp_url}")
 
     model_path = "yolov8_poussin.pt"  # Chemin vers le modèle YOLO
     desired_fps = 15  # Modifier selon le besoin
