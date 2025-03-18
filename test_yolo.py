@@ -6,6 +6,7 @@ model = YOLO("yolov8_poussin.pt")
 
 # Définir le chemin de l'image
 img_path = "poussin1.png"
+img_path = "assets\images_poussins\poussins3.jpg"
 
 # Vérifier si l'image est lisible
 img = cv2.imread(img_path)
@@ -14,7 +15,7 @@ if img is None:
 else:
     print("✅ Image chargée correctement")
 
-# 🔴 Passer le chemin au modèle et non l'image en mémoire
+# Passer le chemin au modèle et non l'image en mémoire
 results = model(img_path)
 
 # Afficher les résultats

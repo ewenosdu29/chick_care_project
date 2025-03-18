@@ -70,7 +70,7 @@ if __name__ == "__main__":
     else:
         print("Aucune IP RTSP trouvée.")
 
-    rtsp_url = f"rtsp://admin:vision29@{ip}/Streaming/channels/201"  # Remplacez par l'URL RTSP de votre caméra
+    rtsp_url = f"rtsp://admin:vision29@{ip}/Streaming/channels/101"  # Remplacez par l'URL RTSP de votre caméra
     print("test :::: :: ",rtsp_url)
     output_filename = "recorded_video/output_video2.avi"  # Nom du fichier de sortie
 
