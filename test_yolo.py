@@ -5,7 +5,7 @@ import cv2
 model = YOLO("yolov8_poussin.pt")
 
 # Définir le chemin de l'image
-img_path = "poussin1.jpg"
+img_path = "poussin1.png"
 
 # Vérifier si l'image est lisible
 img = cv2.imread(img_path)
