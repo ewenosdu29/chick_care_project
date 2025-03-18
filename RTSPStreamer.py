@@ -123,8 +123,8 @@ if __name__ == "__main__":
 
     # Remplacez par l'URL RTSP de votre caméra
     timestamp = datetime.now().strftime("%d-%m-%Y_%H-%M-%S")
-    output_filename1 = f"../Video_test/video_RGB/output_{timestamp}1.mp4" 
-    output_filename2 = f"../Video_test/video_therm/output_{timestamp}2.mp4" 
+    output_filename1 = f"../Video_test/Elevage_1/video_RGB/output_{timestamp}1.mp4" 
+    output_filename2 = f"../Video_test/Elevage_1/video_therm/output_{timestamp}2.mp4" 
 
     # Créer des processus pour chaque caméra
     process1 = multiprocessing.Process(target=start_stream, args=(rtsp_urls_cam1, fps, output_filename1, "Flux Camera 1", var))
