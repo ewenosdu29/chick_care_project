@@ -5,11 +5,10 @@ from ipSearch import find_valid_rtsp_ip
 
 class RTSPYOLOStreamer:
     def __init__(self, rtsp_url, model_path, desired_fps=50):
-        """
-        Initialise la classe avec l'URL RTSP de la caméra, le modèle YOLO et le FPS souhaité.
-        """
         self.rtsp_url = rtsp_url
-        self.cap = cv2.VideoCapture(self.rtsp_url)
+
+        # Utilisation d'FFmpeg comme backend pour OpenCV
+        self.cap = cv2.VideoCapture(self.rtsp_url, cv2.CAP_FFMPEG)
 
         if not self.cap.isOpened():
             print("Erreur : Impossible d'ouvrir le flux RTSP")
@@ -31,9 +30,6 @@ class RTSPYOLOStreamer:
         self.frame_delay = 1 / self.desired_fps  # Délai entre les frames
 
     def display_stream(self):
-        """
-        Affiche le flux vidéo en temps réel avec détection YOLO.
-        """
         last_time = time.time()
 
         while self.cap.isOpened():
@@ -54,24 +50,18 @@ class RTSPYOLOStreamer:
             # Afficher le flux
             cv2.imshow("Flux RTSP avec YOLO", annotated_frame)
 
-            # Gestion du FPS pour éviter un affichage trop rapide
             elapsed_time = time.time() - last_time
             if elapsed_time < self.frame_delay:
                 time.sleep(self.frame_delay - elapsed_time)
             last_time = time.time()
-
-            # Quitter avec ESPACE
             if cv2.waitKey(1) & 0xFF == ord(' '):
                 break
 
     def release(self):
-        """
-        Libère les ressources utilisées par la capture vidéo.
-        """
         self.cap.release()
         cv2.destroyAllWindows()
 
-# Exemple d'utilisation
+
 if __name__ == "__main__":
     ip = find_valid_rtsp_ip()
 
@@ -84,7 +74,7 @@ if __name__ == "__main__":
     rtsp_url = f"rtsp://admin:vision29@{ip}/Streaming/channels/101"  # Remplacez par votre URL RTSP
     print(f"Connexion au flux : {rtsp_url}")
 
-    model_path = "yolov8_poussin.pt"  # Chemin vers le modèle YOLO
+    model_path = "yolov8s.pt"  # Chemin vers le modèle YOLO
     desired_fps = 15  # Modifier selon le besoin
 
     rtsp_stream = RTSPYOLOStreamer(rtsp_url, model_path, desired_fps)
