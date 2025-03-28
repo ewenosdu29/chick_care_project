@@ -2,7 +2,7 @@ from ultralytics import YOLO
 import cv2
 
 # Charger le modèle YOLOv8 avec le fichier .pt
-model = YOLO("yolov8_poussin.pt")
+model = YOLO("yolov8s.pt")
 
 # Définir le chemin de l'image
 img_path = "poussin1.png"
