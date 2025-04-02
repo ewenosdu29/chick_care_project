@@ -1,0 +1,13 @@
+train: ../train/images
+val: ../valid/images
+test: ../test/images
+
+nc: 1
+names: ['poussin']
+
+roboflow:
+  workspace: ewens-workspace-gntop
+  project: chick-care_v2
+  version: 3
+  license: CC BY 4.0
+  url: https://universe.roboflow.com/ewens-workspace-gntop/chick-care_v2/dataset/3
