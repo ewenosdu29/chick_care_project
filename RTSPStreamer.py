@@ -2,7 +2,6 @@ import cv2
 import time
 import multiprocessing
 from datetime import datetime
-from ipSearch import find_valid_rtsp_ip
 
 class RTSPStreamer:
     def __init__(self, rtsp_url, desired_fps, output_filename, window_name):
