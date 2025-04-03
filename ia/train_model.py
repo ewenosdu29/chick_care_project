@@ -1,6 +1,6 @@
 from ultralytics import YOLO
 
-dataset_yaml = "C:\\Users\\timch\\Documents\\AAACours\\nini\\Chick-Care_V2.v2i.yolov8\\data.yaml"
+dataset_yaml = "C:\\Users\\timch\\Documents\\AAACours\\nini\\chick_care_project\\ia\\Base_IA\\Chick-Care_V2\\data.yaml"
 
 model = YOLO('yolov8n.yaml')
 
