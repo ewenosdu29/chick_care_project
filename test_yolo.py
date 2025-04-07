@@ -2,7 +2,8 @@ from ultralytics import YOLO
 import cv2
 
 # Charger le modèle YOLOv8 avec le fichier .pt
-model = YOLO("yolov8_poussin.pt")
+# model = YOLO("yolov8_poussin.pt")
+model = YOLO("yolov8s.pt")
 
 img_path = "assets\images_poussins\poussins3.jpg"
 
@@ -17,7 +18,7 @@ else:
 results = model(img_path)
 
 
-# Afficher les résultats
+# # Afficher les résultats
 for result in results:
     for box in result.boxes:
         x1, y1, x2, y2 = box.xyxy[0]

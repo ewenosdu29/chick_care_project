@@ -1,7 +1,8 @@
 import cv2
 from ultralytics import YOLO
 
-model = YOLO("yolov8_poussin.pt")
+# model = YOLO("D:/ISEN/M1/ProjetM1/chick_care_v2_eh_lp/runs/detect/train9/weights/best.pt")
+model = YOLO("yolov8n.pt")
 
 rgb_video_path = "D:/ISEN/M1/ProjetM1/video_elevage/elevage2/video_RGB/output_29-03-2025_18-04-051.mp4"
 therm_video_path = "D:/ISEN/M1/ProjetM1/video_elevage/elevage2/video_therm/output_29-03-2025_18-04-052.mp4"
@@ -45,7 +46,7 @@ while cap_rgb.isOpened():
         for result in results:
             for box in result.boxes:
                 x1, y1, x2, y2 = box.xyxy[0]
-                cv2.rectangle(frame_rgb, (int(x1), int(y1)), (int(x2), int(y2)), (0, 255, 0), 2)
+                cv2.rectangle(frame_rgb, (int(x1), int(y1)), (int(x2), int(y2)), (0, 255, 0), 2) # rectangle en vert car bonne temperature
 
                 x_moy_rgb, y_moy_rgb = (x1 + x2) / 2, (y1 + y2) / 2
 
@@ -53,7 +54,6 @@ while cap_rgb.isOpened():
                 x_moy_therm = int(x_moy_rgb * scale_x)
                 y_moy_therm = int(y_moy_rgb * scale_y)
 
-                # Vérifier si le poussin est dans l'image thermique
                 if 0 <= x_moy_therm < therm_width and 0 <= y_moy_therm < therm_height:
                     # Extraire la valeur du pixel
                     pixel_value = gray[y_moy_therm, x_moy_therm]
@@ -62,24 +62,19 @@ while cap_rgb.isOpened():
                     min_temp, max_temp = 20, 40
                     temp_celsius = min_temp + (pixel_value / 255) * (max_temp - min_temp)
 
-                    if temp_celsius < 26.5:
+                    if temp_celsius < 26.5: # on verifie si la temperature est anormalement basse 
                         print(f"Atention ! Température de {temp_celsius}°C détectée ! -> position : ({x_moy_therm}, {y_moy_therm})")
-                        cv2.rectangle(frame_rgb, (int(x1), int(y1)), (int(x2), int(y2)), (0, 0, 255), 2)
+                        cv2.rectangle(frame_rgb, (int(x1), int(y1)), (int(x2), int(y2)), (0, 0, 255), 2) # annotations en rouge pour une temp anormale
                         cv2.circle(frame_rgb, (int(x_moy_rgb), int(y_moy_rgb)), 5, (0, 0, 255), -1)
-                        cv2.putText(frame_rgb, f"{temp_celsius:.1f} C", 
-                                (int(x_moy_rgb) + 10, int(y_moy_rgb) - 10), 
-                                cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
+                        cv2.putText(frame_rgb, f"{temp_celsius:.1f} C", (int(x_moy_rgb) + 10, int(y_moy_rgb) - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
 
-                    print(f"Point de chaleur: x={x_moy_therm}, y={y_moy_therm} → Température: {temp_celsius:.1f}°C")
+                    print(f"Point de chaleur: ({x_moy_therm}, {y_moy_therm}) → Température: {temp_celsius:.1f}°C")
 
                     cv2.circle(frame_rgb, (int(x_moy_rgb), int(y_moy_rgb)), 5, (0, 0, 255), -1)
-                    cv2.putText(frame_rgb, f"{temp_celsius:.1f} C", 
-                                (int(x_moy_rgb) + 10, int(y_moy_rgb) - 10), 
-                                cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
+                    cv2.putText(frame_rgb, f"{temp_celsius:.1f} C", (int(x_moy_rgb) + 10, int(y_moy_rgb) - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
                 else:
                     print(f"Poussin hors champ thermique (x={x_moy_rgb}, y={y_moy_rgb})")
 
-    # Afficher l'image avec les annotations
     cv2.imshow("Poussins détectés", frame_rgb)
     if cv2.waitKey(1) & 0xFF == ord(' '):
         break
