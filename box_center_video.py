@@ -59,7 +59,7 @@ while cap_rgb.isOpened():
                     pixel_value = gray[y_moy_therm, x_moy_therm]
 
                     # Conversion de la température (exemple 20°C - 40°C)
-                    min_temp, max_temp = 20, 40
+                    min_temp, max_temp = 30, 45
                     temp_celsius = min_temp + (pixel_value / 255) * (max_temp - min_temp)
 
                     if temp_celsius < 26.5: # on verifie si la temperature est anormalement basse 

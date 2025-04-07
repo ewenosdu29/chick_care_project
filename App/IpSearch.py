@@ -43,3 +43,5 @@ def find_valid_rtsp_ip(timeout=3):
 
     print("Aucune IP valide trouvée.")
     return None  
+
+find_valid_rtsp_ip()
