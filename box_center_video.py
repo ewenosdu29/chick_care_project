@@ -1,8 +1,6 @@
 import cv2
 from ultralytics import YOLO
 
-
-
 def box_center_video(rgb_path, therm_path, model_path):
 
     # Charger le model passé en paramètre de la fonction
