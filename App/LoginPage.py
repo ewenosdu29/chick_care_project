@@ -1,13 +1,14 @@
 from PySide6.QtWidgets import QWidget, QLabel, QVBoxLayout, QPushButton, QLineEdit, QMessageBox
 from PySide6.QtCore import Qt
 
-
 class LoginPage(QWidget):
     """ Page de connexion """
     def __init__(self, widget_manager):
         super().__init__()
+
         self.widget_manager = widget_manager  # Gestionnaire de pages
 
+        # Initialisation des composants de la fenêtre
         self.layout = QVBoxLayout(self)
 
         self.label = QLabel("Connexion à Chick & Care", self)
@@ -19,16 +20,20 @@ class LoginPage(QWidget):
 
         self.password_input = QLineEdit(self)
         self.password_input.setPlaceholderText("Mot de passe")
-        self.password_input.setEchoMode(QLineEdit.Password)  # Masque le mot de passe
+        self.password_input.setEchoMode(QLineEdit.Password)
         self.password_input.setAlignment(Qt.AlignCenter)
+
+        # Passer à la zone suivante après avoir appuyé sur "Entrée"
+        self.username_input.returnPressed.connect(self.password_input.setFocus)
+        self.password_input.returnPressed.connect(self.check_login)
 
         self.login_button = QPushButton("Se connecter")
         self.login_button.clicked.connect(self.check_login)
 
         self.error_label = QLabel("", self)
         self.error_label.setAlignment(Qt.AlignCenter)
-        self.error_label.setStyleSheet("color: red;")
 
+        # Ajouter les widgets au layout
         self.layout.addWidget(self.label)
         self.layout.addWidget(self.username_input)
         self.layout.addWidget(self.password_input)

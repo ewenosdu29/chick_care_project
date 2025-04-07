@@ -74,8 +74,6 @@ class MainWindow(QMainWindow):
         self.rtsp_url = f"rtsp://admin:vision29@{ip}/Streaming/channels/101"
         self.camera_stream = CameraStream(self.rtsp_url, self.video_label)
         self.camera_stream.start()
-
-        print("Flux OK !")
         return page
 
     def logout(self):

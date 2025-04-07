@@ -34,7 +34,6 @@ def find_valid_rtsp_ip(timeout=3):
             continue
         
         rtsp_url = f"rtsp://admin:vision29@{ip}/Streaming/channels/201"
-        print(f"Port ouvert ! Test du flux RTSP sur {rtsp_url}")
 
         cap = cv2.VideoCapture(rtsp_url)
         start_time = time.time()
@@ -47,7 +46,6 @@ def find_valid_rtsp_ip(timeout=3):
                 return ip  
 
         cap.release()
-        print(f"Timeout atteint pour {ip}, on teste la suivante...")
 
     print("Aucune IP valide trouvée.")
     return None  

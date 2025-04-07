@@ -1,7 +1,7 @@
 import sys
 from PySide6.QtWidgets import QApplication, QStackedWidget
 from LoginPage import LoginPage
-from MainWindow import MainWindow  # Import de la fenêtre principale après connexion
+from MainWindow import MainWindow  
 
 
 def main():
