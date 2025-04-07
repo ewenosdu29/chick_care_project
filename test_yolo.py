@@ -4,7 +4,7 @@ import cv2
 # Charger le modèle YOLOv8 avec le fichier .pt
 model = YOLO("yolov8_poussin.pt")
 
-img_path = "assets\images_poussins\poussins3.jpg"
+img_path = "assets/images_poussins/poussin4.jpg"
 
 # Vérifier si l'image est lisible
 img = cv2.imread(img_path)
