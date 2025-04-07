@@ -7,13 +7,21 @@ def is_rtsp_port_open(ip, port=554, timeout=1):
     Vérifie si le port RTSP (554) est ouvert sur l'IP donnée.
     Retourne True si le port est ouvert, sinon False.
     """
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
-        sock.settimeout(timeout)
-        try:
+import socket
+
+def is_rtsp_port_open(ip, port=554, timeout=1):
+    """
+    Vérifie si le port RTSP (554) est ouvert sur l'IP donnée.
+    Retourne True si le port est ouvert, sinon False.
+    """
+    try:
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+            sock.settimeout(timeout)
             sock.connect((ip, port))
             return True
-        except (socket.timeout, ConnectionRefusedError):
-            return False
+    except (socket.timeout, ConnectionRefusedError, OSError):
+        return False
+
 
 def find_valid_rtsp_ip(timeout=3):
 
@@ -43,5 +51,3 @@ def find_valid_rtsp_ip(timeout=3):
 
     print("Aucune IP valide trouvée.")
     return None  
-
-find_valid_rtsp_ip()
