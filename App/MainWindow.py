@@ -1,8 +1,12 @@
-from PySide6.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLabel, QStackedWidget
+from PySide6.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLabel, QStackedWidget, QComboBox, QCheckBox,  QLineEdit
 from PySide6.QtCore import Qt
+import datetime
+import matplotlib.pyplot as plt
+from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from IpSearch import find_valid_rtsp_ip
 from Camera_Stream import CameraStream
 from Visualisation import Visualisation
+from Statistiques import save_statistiques
 
 
 class MainWindow(QMainWindow):
@@ -101,22 +105,58 @@ class MainWindow(QMainWindow):
         page = QWidget()
         layout = QVBoxLayout(page)
 
-        self.label_main = QLabel("Flux en direct de la caméra thermique")
+        self.label_main = QLabel("Flux en direct de la caméra")
         self.label_main.setAlignment(Qt.AlignCenter)
 
         self.video_label = QLabel()
         self.video_label.setFixedSize(640, 480)
         self.video_label.setAlignment(Qt.AlignCenter)
 
+        # Menu déroulant pour choisir la caméra
+        self.camera_selector = QComboBox()
+        ip = find_valid_rtsp_ip()
+        self.camera_selector.addItem("Caméra RGB", f"rtsp://admin:vision29@{ip}/Streaming/channels/101")
+        self.camera_selector.addItem("Caméra Thermique", f"rtsp://admin:vision29@{ip}/Streaming/channels/201")
+
+        # Boutons pour activer / arrêter la caméra
+        self.activate_button = QPushButton("Activer la caméra")
+        self.stop_button = QPushButton("Arrêter la caméra")
+
+        self.activate_button.clicked.connect(self.activate_selected)
+        self.stop_button.clicked.connect(self.stop_camera)
+
         layout.addWidget(self.label_main)
+        layout.addWidget(self.camera_selector)
+        layout.addWidget(self.activate_button)
+        layout.addWidget(self.stop_button)
         layout.addWidget(self.video_label)
 
-        # Lancer le flux caméra
-        ip = find_valid_rtsp_ip()
-        self.rtsp_url = f"rtsp://admin:vision29@{ip}/Streaming/channels/101"
-        self.camera_stream = CameraStream(self.rtsp_url, self.video_label)
-        self.camera_stream.start()
+        self.camera_stream = None  # Flux caméra initialisé à None
+
         return page
+
+
+    def activate_selected(self):
+        # Arrêter le flux précédent s’il existe
+        if self.camera_stream:
+            self.camera_stream.stop()
+
+        # Récupérer l’URL RTSP sélectionnée
+        rtsp_url = self.camera_selector.currentData()
+
+        # Activer l’IA uniquement si c’est la caméra RGB
+        ai_enabled = self.camera_selector.currentIndex() == 0
+
+        # Démarrer le nouveau flux
+        self.camera_stream = CameraStream(rtsp_url, self.video_label, ai_enabled=ai_enabled)
+        self.camera_stream.start()
+
+    def stop_camera(self):
+        """ Arrête proprement la visualisation de la caméra """
+        if self.camera_stream:
+            self.camera_stream.stop()
+            self.camera_stream = None
+            self.video_label.clear()  # Vide l’affichage
 
     def logout(self):
         """ Déconnecte et retourne à la page de login """
@@ -129,10 +169,107 @@ class MainWindow(QMainWindow):
     def create_statistique_page(self):
         page = QWidget()
         layout = QVBoxLayout(page)
-        label = QLabel("Page de statistiques (à compléter)")
+
+        label = QLabel("Page de statistiques")
         label.setAlignment(Qt.AlignCenter)
+
+        # Champ pour entrer le nombre de poussins
+        self.poussins_input = QLineEdit()
+        self.poussins_input.setPlaceholderText("Entrez le nombre de poussins")
+
+        # Affichage de la date du jour
+        self.date_label = QLabel(f"Date : {datetime.datetime.now().strftime('%Y-%m-%d')}")
+        self.date_label.setAlignment(Qt.AlignCenter)
+
+        # Bouton pour enregistrer les données
+        self.save_button = QPushButton("Enregistrer")
+        self.save_button.clicked.connect(self.save_statistiques)
+
+        # Bouton pour afficher le graphique
+        self.show_graph_button = QPushButton("Afficher le graphique")
+        self.show_graph_button.clicked.connect(self.show_graph)
+
+        # Ajout des widgets au layout
         layout.addWidget(label)
+        layout.addWidget(self.date_label)
+        layout.addWidget(self.poussins_input)
+        layout.addWidget(self.save_button)
+        layout.addWidget(self.show_graph_button)
+
+        # Zone pour afficher le graphique
+        self.graph_layout = QVBoxLayout()
+        layout.addLayout(self.graph_layout)
+
         return page
+
+    def save_statistiques(self):
+        # Récupérer le nombre de poussins et vérifier que c'est un nombre valide
+        try:
+            poussins_count = int(self.poussins_input.text())
+        except ValueError:
+            print("Veuillez entrer un nombre valide de poussins.")
+            return
+        
+        # Récupérer la date du jour
+        date_today = self.date_label.text().replace("Date : ", "")
+
+        # Appeler la fonction importée pour enregistrer les statistiques
+        save_statistiques(poussins_count, date_today)
+
+        # Optionnel : vider le champ de saisie
+        self.poussins_input.clear()
+
+    def show_graph(self):
+        # Lire les données enregistrées depuis le fichier
+        dates = []
+        poussins_counts = []
+
+        try:
+            with open("statistiques.txt", "r") as file:
+                lines = file.readlines()
+                for line in lines:
+                    date, count = line.strip().split(", ")
+                    dates.append(date)
+                    poussins_counts.append(int(count))
+        except FileNotFoundError:
+            print("Le fichier de statistiques n'existe pas encore.")
+            return
+
+        # Créer un graphique avec Matplotlib
+        fig, ax = plt.subplots(figsize=(8, 6))
+
+        # Ploter les données
+        ax.plot(dates, poussins_counts, marker='o', color='b', linestyle='-', label="Nombre de poussins")
+        ax.set_title("Évolution du nombre de poussins")
+        ax.set_xlabel("Date")
+        ax.set_ylabel("Nombre de poussins")
+
+        # Définir les positions des ticks sur l'axe X
+        ax.set_xticks(dates)  # Définir les positions des ticks à chaque date
+        ax.set_xticklabels(dates, rotation=45, ha="right")  # Rotation des labels des dates
+
+        ax.legend()
+
+        # Rendre le fond transparent
+        fig.patch.set_facecolor('none')
+        ax.set_facecolor('none')  # Le fond de l'axe également transparent
+
+        # Créer un canvas Matplotlib pour l'affichage dans le widget Qt
+        canvas = FigureCanvas(fig)
+        canvas.draw()
+
+        # Supprimer le graphique existant avant d'ajouter le nouveau
+        if hasattr(self, 'graph_widget'):
+            self.graph_widget.deleteLater()
+
+        # Ajouter le canvas au layout Qt
+        self.graph_widget = QWidget(self)
+        graph_layout = QVBoxLayout(self.graph_widget)
+        graph_layout.addWidget(canvas)
+        self.graph_layout.addWidget(self.graph_widget)
+
+        # Fermer la figure pour libérer la mémoire
+        plt.close(fig)
 
     def create_enregistrement_page(self):
         page = QWidget()
