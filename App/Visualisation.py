@@ -13,7 +13,7 @@ class Visualisation(QWidget):
         self.update_file_list("RGB")
 
         # Charger le modèle YOLO
-        self.model = YOLO("D:/ISEN/M1/ProjetM1/chick_care_v2_eh_lp/runs/detect/train2/weights/best.pt")
+        self.model = YOLO("runs/detect/train2/weights/best.pt")
 
         # Timer pour le traitement de la vidéo
         self.timer = QTimer(self)
@@ -96,7 +96,7 @@ class Visualisation(QWidget):
 
     def update_rgb_files(self):
         """Charge toutes les vidéos RGB dans le combo_file"""
-        rgb_folder = "D:/ISEN/M1/ProjetM1/video_elevage/elevage2/video_RGB"  # Dossier des vidéos RGB
+        rgb_folder = "../../video_elevage/elevage2/video_RGB"  # Dossier des vidéos RGB
         files = [f for f in os.listdir(rgb_folder) if f.endswith(".mp4")]  # Liste des fichiers .mp4
         
         self.combo_file.clear()  # Clear the combo box before adding new items
@@ -104,7 +104,7 @@ class Visualisation(QWidget):
 
     def update_therm_files(self):
         """Charge toutes les vidéos RGB dans le combo_file"""
-        therm_folder = "D:/ISEN/M1/ProjetM1/video_elevage/elevage2/video_therm"  # Dossier des vidéos RGB
+        therm_folder = "../../video_elevage/elevage2/video_therm"  # Dossier des vidéos RGB
         files = [f for f in os.listdir(therm_folder) if f.endswith(".mp4")]  # Liste des fichiers .mp4
         
         self.combo_file.clear()  # Clear the combo box before adding new items
@@ -115,7 +115,7 @@ class Visualisation(QWidget):
         print(f"Vidéo sélectionnée : {selected_video}")
 
         if selected_video:
-            folder = "D:/ISEN/M1/ProjetM1/video_elevage/elevage2/video_RGB" if self.combo_source.currentText() == "RGB" else "D:/ISEN/M1/ProjetM1/video_elevage/elevage2/video_therm"
+            folder = "../../video_elevage/elevage2/video_RGB" if self.combo_source.currentText() == "RGB" else "../../video_elevage/elevage2/video_therm"
             video_path = os.path.join(folder, selected_video)
 
             if os.path.exists(video_path):
@@ -270,7 +270,7 @@ def find_matching_video_paths(rgb_path):
     rgb_path = rgb_path.replace("\\", "/")
     rgb_filename = os.path.basename(rgb_path)
     base_name = "-".join(rgb_filename.split("-")[:3])  # ex: output_29-03-2025_18-04
-    base_therm_folder = "D:/ISEN/M1/ProjetM1/video_elevage/elevage2/video_therm"
+    base_therm_folder = "../../video_elevage/elevage2/video_therm"
 
     for file in os.listdir(base_therm_folder):
         file_path = os.path.join(base_therm_folder, file).replace("\\", "/")
