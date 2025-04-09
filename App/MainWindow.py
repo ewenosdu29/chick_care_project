@@ -5,7 +5,6 @@ from Camera_Stream import CameraStream
 from Visualisation import Visualisation
 
 
-
 class MainWindow(QMainWindow):
     def __init__(self, widget_manager):
         super().__init__()
