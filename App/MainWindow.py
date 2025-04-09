@@ -2,6 +2,8 @@ from PySide6.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QP
 from PySide6.QtCore import Qt
 from IpSearch import find_valid_rtsp_ip
 from Camera_Stream import CameraStream
+from Visualisation import Visualisation
+
 
 
 class MainWindow(QMainWindow):
@@ -123,12 +125,7 @@ class MainWindow(QMainWindow):
         self.widget_manager.setCurrentIndex(0)
 
     def create_visualisation_page(self):
-        page = QWidget()
-        layout = QVBoxLayout(page)
-        label = QLabel("Page de visualisation (à compléter)")
-        label.setAlignment(Qt.AlignCenter)
-        layout.addWidget(label)
-        return page
+        return Visualisation()
 
     def create_statistique_page(self):
         page = QWidget()
@@ -156,4 +153,7 @@ class MainWindow(QMainWindow):
         # Applique la classe active au bouton sélectionné
         active_button.setProperty("class", "active-button")
         active_button.setStyleSheet("")  # Force le refresh du style
+
+
+
 
