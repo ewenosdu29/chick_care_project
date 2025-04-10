@@ -4,7 +4,7 @@ import datetime
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from IpSearch import find_valid_rtsp_ip
-from Camera_Stream import CameraStream
+from Camera_Stream import ChickTemperatureViewer
 from Visualisation import Visualisation
 from Statistiques import save_statistiques
 
@@ -112,13 +112,14 @@ class MainWindow(QMainWindow):
         self.video_label.setFixedSize(640, 480)
         self.video_label.setAlignment(Qt.AlignCenter)
 
-        # Menu déroulant pour choisir la caméra
         self.camera_selector = QComboBox()
         ip = find_valid_rtsp_ip()
-        self.camera_selector.addItem("Caméra RGB", f"rtsp://admin:vision29@{ip}/Streaming/channels/101")
-        self.camera_selector.addItem("Caméra Thermique", f"rtsp://admin:vision29@{ip}/Streaming/channels/201")
+        self.camera_selector.addItem("Détection des poussins (RGB + Thermique)", {"rgb": f"rtsp://admin:vision29@{ip}/Streaming/channels/101", "therm": f"rtsp://admin:vision29@{ip}/Streaming/channels/201"})
+        self.camera_selector.addItem("Caméra Thermique seule", {"therm": f"rtsp://admin:vision29@{ip}/Streaming/channels/201"})
 
-        # Boutons pour activer / arrêter la caméra
+        model_path = "../runs/detect/train2/weights/best.pt"
+        self.camera_stream = ChickTemperatureViewer(self.video_label, model_path)
+
         self.activate_button = QPushButton("Activer la caméra")
         self.stop_button = QPushButton("Arrêter la caméra")
 
@@ -131,32 +132,24 @@ class MainWindow(QMainWindow):
         layout.addWidget(self.stop_button)
         layout.addWidget(self.video_label)
 
-        self.camera_stream = None  # Flux caméra initialisé à None
-
         return page
 
 
     def activate_selected(self):
-        # Arrêter le flux précédent s’il existe
-        if self.camera_stream:
-            self.camera_stream.stop()
+        # Récupérer l'élément sélectionné dans la ComboBox
+        selected_item = self.camera_selector.currentData()
 
-        # Récupérer l’URL RTSP sélectionnée
-        rtsp_url = self.camera_selector.currentData()
+        # Vérifier si les clés 'rgb' et 'therm' sont présentes dans le dictionnaire
+        if "rgb" in selected_item and "therm" in selected_item:
+            # Si les deux flux sont disponibles, lancer la détection des poussins (RGB + Thermique)
+            self.camera_stream.start(selected_item["rgb"], selected_item["therm"])
+        elif "therm" in selected_item:
+            # Si seule la caméra thermique est sélectionnée, lancer uniquement le flux thermique
+            self.camera_stream.start_thermal_only(selected_item["therm"])
 
-        # Activer l’IA uniquement si c’est la caméra RGB
-        ai_enabled = self.camera_selector.currentIndex() == 0
-
-        # Démarrer le nouveau flux
-        self.camera_stream = CameraStream(rtsp_url, self.video_label, ai_enabled=ai_enabled)
-        self.camera_stream.start()
 
     def stop_camera(self):
-        """ Arrête proprement la visualisation de la caméra """
-        if self.camera_stream:
-            self.camera_stream.stop()
-            self.camera_stream = None
-            self.video_label.clear()  # Vide l’affichage
+        self.camera_stream.stop()
 
     def logout(self):
         """ Déconnecte et retourne à la page de login """

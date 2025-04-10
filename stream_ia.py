@@ -41,7 +41,7 @@ class RTSPYOLOStreamer:
                 break
 
             # Appliquer YOLO en mode streaming pour optimiser la vitesse
-            results = self.model(frame, stream=True, verbose=False)
+            results = self.model(frame, stream=True)
 
             # Dessiner les annotations sur l'image
             for result in results:
