@@ -1,5 +1,5 @@
 import cv2
-from ipSearch import find_valid_rtsp_ip
+from IpSearch import find_valid_rtsp_ip
 
 class RTSPStreamer:
     def __init__(self, rtsp_url, desired_fps, output_filename):

@@ -1,0 +1,9 @@
+Arrivage du 2025-04-15_12-53
+Nombre de poussins : 10000
+Race : ZDQZR
+Données journalières : 
+2025-04-15 : 5
+2025-04-15 : 6
+2025-04-15 : 10
+
+--- Fin du relevé ---

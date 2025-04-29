@@ -1,7 +1,7 @@
 import cv2
 import time
 from ultralytics import YOLO
-from ipSearch import find_valid_rtsp_ip
+from IpSearch import find_valid_rtsp_ip
 
 class RTSPYOLOStreamer:
     def __init__(self, rtsp_url, model_path, desired_fps=50):

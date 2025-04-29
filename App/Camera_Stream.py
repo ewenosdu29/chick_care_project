@@ -171,8 +171,20 @@ class ChickTemperatureViewer:
 
     def stop(self):
         self.running = False
-        if hasattr(self, 'cap_rgb'):
+
+        # Libérer la caméra RGB si elle existe
+        if hasattr(self, 'rgb'):
             self.cap_rgb.release()
-        if hasattr(self, 'cap_therm'):
+            del self.cap_rgb  # Nettoyer la référence de la caméra RGB
+
+        # Libérer la caméra thermique si elle existe
+        if hasattr(self, 'therm'):
             self.cap_therm.release()
+            del self.cap_therm  # Nettoyer la référence de la caméra thermique
+
+        # Fermer toutes les fenêtres d'affichage OpenCV si elles sont ouvertes
+        cv2.destroyAllWindows()
+
+        # Nettoyer la vue de l'étiquette (label)
         self.label.clear()
+

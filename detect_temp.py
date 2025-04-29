@@ -128,4 +128,4 @@ ________________________________________________________________________________
 '''   
 
 # detect_temperature_on_hover("recorded_video\output_video.avi", min_temp=20, max_temp=40)
-display_temperatures_from_file("recorded_video\output_video.avi", "text_files\coords.txt", min_temp=20, max_temp=40)
+display_temperatures_from_file("/Users/leoniepiment/Documents/M1ISEN/Projet/video_elevage/elevage2/video_RGB/output_29-03-2025_18-04-051.mp4", "text_files/coords.txt", min_temp=20, max_temp=40)

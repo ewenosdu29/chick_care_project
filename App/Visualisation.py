@@ -13,7 +13,7 @@ class Visualisation(QWidget):
         self.update_file_list("RGB")
 
         # Charger le modèle YOLO
-        self.model = YOLO("runs/detect/train2/weights/best.pt")
+        self.model = YOLO("App/yolov8s_poussin.pt")
 
         # Timer pour le traitement de la vidéo
         self.timer = QTimer(self)

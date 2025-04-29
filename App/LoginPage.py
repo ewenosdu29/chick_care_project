@@ -123,5 +123,7 @@ class LoginPage(QWidget):
         if username in valid_users and valid_users[username] == password:
             QMessageBox.information(self, "Succès", "Connexion réussie !")
             self.widget_manager.setCurrentIndex(1)
+            self.password_input.clear()
+            self.username_input.clear()
         else:
             QMessageBox.warning(self, "Erreur", "Identifiant ou mot de passe incorrect !")
