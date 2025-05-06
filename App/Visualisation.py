@@ -1,8 +1,12 @@
-from PySide6.QtWidgets import QWidget, QVBoxLayout, QLabel, QComboBox, QCheckBox, QPushButton, QHBoxLayout
+from PySide6.QtWidgets import QWidget, QVBoxLayout, QLabel, QComboBox, QCheckBox, QPushButton, QHBoxLayout, QScrollArea
 from PySide6.QtCore import Qt, QTimer
 from PySide6.QtGui import QImage, QPixmap
+from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
+from matplotlib.figure import Figure
+import numpy as np
 import os
 import cv2
+import time
 from ultralytics import YOLO
 
 
@@ -22,65 +26,89 @@ class Visualisation(QWidget):
         self.is_paused = False  # Variable de contrôle de la pause
         self.is_playing = False  # État de la vidéo
         self.thermal_cap = None  # Initialiser la variable pour la vidéo thermique
+        self.temperatures = []
+        self.last_avg_time = time.time()
+        self.previous_avg_temp = None
 
     def init_ui(self):
         """Initialisation de l'interface utilisateur"""
-        layout = QVBoxLayout(self)
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+
+        # Contenu scrollable
+        content_widget = QWidget()
+        layout = QVBoxLayout(content_widget)
 
         # Titre
         self.title_label = QLabel("Page de Visualisation", self)
         self.title_label.setAlignment(Qt.AlignCenter)
         self.title_label.setStyleSheet("font-size: 24px; color: white;")
-        
-        # Menu déroulant pour sélectionner RGB ou Thermique
-        self.combo_source = QComboBox(self)
-        self.combo_source.addItem("RGB")
-        self.combo_source.addItem("Thermique")
-        self.combo_source.currentTextChanged.connect(self.update_file_list)
-        
-        # Ajouter le titre et le menu déroulant au layout
         layout.addWidget(self.title_label)
+
+        # Menu déroulant RGB / Thermique
+        self.combo_source = QComboBox(self)
+        self.combo_source.addItems(["RGB", "Thermique"])
+        self.combo_source.currentTextChanged.connect(self.update_file_list)
         layout.addWidget(self.combo_source)
 
-        # Option pour activer/désactiver l'IA
+        # Checkbox IA
         self.ia_checkbox = QCheckBox("Appliquer le modèle IA", self)
-        self.ia_checkbox.setEnabled(False)  # IA ne peut être activée que pour RGB
+        self.ia_checkbox.setEnabled(False)
         layout.addWidget(self.ia_checkbox)
 
+        # Sélection de fichiers
         self.combo_file = QComboBox(self)
         layout.addWidget(self.combo_file)
 
-        # Zone de lecture vidéo
+        # Zone vidéo
         self.video_label = QLabel(self)
         self.video_label.setFixedSize(640, 480)
         self.video_label.setAlignment(Qt.AlignCenter)
         layout.addWidget(self.video_label)
 
-        # Layout horizontal pour les boutons (Lancer, Pause, Arrêter)
+        # Boutons
         button_layout = QHBoxLayout()
-
-        # Bouton pour lancer la vidéo
         self.launch_button = QPushButton("Lancer la vidéo", self)
-        self.launch_button.clicked.connect(self.start_video)  # Connecter le bouton à une fonction
+        self.launch_button.clicked.connect(self.start_video)
         button_layout.addWidget(self.launch_button)
 
-        # Bouton pour mettre en pause/reprendre la vidéo
         self.pause_button = QPushButton("Pause", self)
-        self.pause_button.setEnabled(False)  # Désactivé tant qu'aucune vidéo n'est en cours
-        self.pause_button.clicked.connect(self.toggle_pause)  # Connecter le bouton de pause
+        self.pause_button.setEnabled(False)
+        self.pause_button.clicked.connect(self.toggle_pause)
         button_layout.addWidget(self.pause_button)
 
-        # Bouton pour arrêter la vidéo
         self.stop_button = QPushButton("Arrêter", self)
-        self.stop_button.setEnabled(False)  # Désactivé tant qu'aucune vidéo n'est en cours
-        self.stop_button.clicked.connect(self.stop_video)  # Connecter le bouton d'arrêt
+        self.stop_button.setEnabled(False)
+        self.stop_button.clicked.connect(self.stop_video)
         button_layout.addWidget(self.stop_button)
 
-        # Ajouter le layout horizontal des boutons au layout principal
         layout.addLayout(button_layout)
 
-        # Centrer l'interface
-        self.setLayout(layout)
+        # Température moyenne
+        self.avg_temp_label = QLabel("Température moyenne : -- °C", self)
+        self.avg_temp_label.setAlignment(Qt.AlignCenter)
+        self.avg_temp_label.setStyleSheet("font-size: 16px; color: white;")
+        layout.addWidget(self.avg_temp_label)
+
+        # Flèche d’évolution de la température
+        self.temp_trend_label = QLabel("", self)
+        self.temp_trend_label.setAlignment(Qt.AlignCenter)
+        self.temp_trend_label.setStyleSheet("font-size: 20px; color: white;")
+        layout.addWidget(self.temp_trend_label)
+
+        # Graphique matplotlib (ajouté dynamiquement dans le code)
+        self.create_temp_graph()
+        layout.addWidget(self.canvas)
+
+        # ScrollArea configuration
+        scroll.setWidget(content_widget)
+
+        # Layout principal de la page
+        main_layout = QVBoxLayout(self)
+        main_layout.addWidget(scroll)
+        self.setLayout(main_layout)
+
+        self.setMinimumSize(800, 600)
 
     def update_file_list(self, source_type):
         """Met à jour les actions selon la sélection de la source (RGB ou Thermique)"""
@@ -211,46 +239,94 @@ class Visualisation(QWidget):
         self.video_label.setPixmap(scaled_pixmap)
 
     def apply_yolo_model(self, frame, gray):
-        """Appliquer YOLO et afficher la température de la vidéo thermique"""
-        results = self.model(frame)  # Appliquer le modèle sur l'image
+        """Applique le modèle YOLO à la frame et récupère les températures des poussins"""
+        results = self.model(frame)
 
-        # Obtenir les dimensions de la vidéo RGB et thermique
-        rgb_width = frame.shape[1]  # Largeur de l'image RGB
-        rgb_height = frame.shape[0]  # Hauteur de l'image RGB
+        rgb_width = frame.shape[1]
+        rgb_height = frame.shape[0]
 
         if self.thermal_cap:
-            therm_width = int(self.thermal_cap.get(cv2.CAP_PROP_FRAME_WIDTH))  # Largeur de l'image thermique
-            therm_height = int(self.thermal_cap.get(cv2.CAP_PROP_FRAME_HEIGHT))  # Hauteur de l'image thermique
+            therm_width = int(self.thermal_cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+            therm_height = int(self.thermal_cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
 
-            # Calcul des facteurs d'échelle
             scale_x = therm_width / rgb_width
             scale_y = therm_height / rgb_height
 
-            # Parcourir les résultats pour chaque détection
+            frame_temperatures = []
+
             for result in results:
                 for box in result.boxes:
-                    x1, y1, x2, y2 = box.xyxy[0]
-
+                    x1, y1, x2, y2 = map(int, box.xyxy[0])
                     x_moy = (x1 + x2) / 2
                     y_moy = (y1 + y2) / 2
 
-                    # Appliquer les facteurs d'échelle pour adapter les coordonnées RGB à la vidéo thermique
                     x_moy_therm = int(x_moy * scale_x)
                     y_moy_therm = int(y_moy * scale_y)
 
-                    # Dessiner un rectangle autour de l'objet détecté
-                    cv2.rectangle(frame, (int(x1), int(y1)), (int(x2), int(y2)), (0, 255, 0), 2)  # Rectangle vert
-                    cv2.circle(frame, (int(x_moy), int(y_moy)), 5, (0, 0, 0), -1)  # Point noir au centre
-
-                    # Obtenir la température à ces coordonnées (sur l'image thermique)
                     temperature = self.get_temperature_at_point(gray, x_moy_therm, y_moy_therm)
+                    frame_temperatures.append(temperature)
 
-                    # Afficher la température sur l'image RGB
+                    temp_color = (0, 255, 0)
+                    if temperature < 37.5:
+                        temp_color = (0, 0, 255)
+
                     cv2.putText(frame, f"{temperature} C", (int(x_moy) - 10, int(y_moy) - 10),
-                                cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 0), 2, cv2.LINE_AA)  # Texte jaune
+                                cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 0), 2, cv2.LINE_AA)
+                    cv2.rectangle(frame, (int(x1), int(y1)), (int(x2), int(y2)), temp_color, 2)
+                    cv2.circle(frame, (int(x_moy), int(y_moy)), 5, (0, 0, 0), -1)
+
+            # Ajouter les températures de cette frame à la liste globale
+            self.temperatures.extend(frame_temperatures)
+
+            # Calculer la moyenne toutes les 5 secondes
+            current_time = time.time()
+            if current_time - self.last_avg_time >= 5 and self.temperatures:
+                temps_array = np.array(self.temperatures)
+                avg_temp = np.mean(temps_array)
+                std_temp = np.std(temps_array)
+
+                # Flèche de variation
+                arrow = ""
+                if self.previous_avg_temp is not None:
+                    if avg_temp > self.previous_avg_temp:
+                        arrow = " ↑"
+                    elif avg_temp < self.previous_avg_temp:
+                        arrow = " ↓"
+
+                self.avg_temp_label.setText(f"Température moyenne : {avg_temp:.2f} °C{arrow}")
+
+                # Met à jour les historiques
+                self.temp_history.append(avg_temp)
+                self.std_history.append(std_temp)
+                self.update_graph()
+
+                self.previous_avg_temp = avg_temp
+                self.temperatures.clear()
+                self.last_avg_time = current_time
 
         return frame
 
+    def update_graph(self):
+        self.ax.clear()
+        self.ax.plot(self.temp_history, label="Température moyenne", color="blue")
+        self.ax.fill_between(range(len(self.temp_history)),
+                            np.array(self.temp_history) - np.array(self.std_history),
+                            np.array(self.temp_history) + np.array(self.std_history),
+                            color='blue', alpha=0.2, label="Écart type")
+
+        self.ax.set_ylabel("Température (°C)")
+        self.ax.set_xlabel("Mesure")
+        self.ax.legend(loc="upper right")
+        self.ax.grid(True)
+        self.canvas.draw()
+
+
+    def create_temp_graph(self):
+        self.figure = Figure(figsize=(5, 2))
+        self.canvas = FigureCanvas(self.figure)
+        self.ax = self.figure.add_subplot(111)
+        self.temp_history = []  # Stocke les moyennes successives
+        self.std_history = []   # Stocke les écarts types
 
     def get_temperature_at_point(self, gray, x, y):
         """Retourne la température à un point donné dans l'image thermique"""
